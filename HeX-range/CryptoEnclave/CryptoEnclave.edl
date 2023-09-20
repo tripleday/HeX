@@ -1,0 +1,37 @@
+enclave {
+
+    from "sgx_tstdc.edl" import *;
+    
+    
+    trusted {
+
+        public void ecall_init([in,size=len] unsigned char *keyF, size_t len);
+        public void ecall_updateDoc([in, size=id_length] char *doc_id, size_t id_length, [in, size=content_length] char *content, size_t content_length, [in, size=op_len] const int* op, size_t op_len);
+        public void ecall_search([in, size=num_len] const int *num, size_t num_len, [in, size=order_len] const char *order, size_t order_len);
+        public void ecall_printMem();
+    };
+
+    untrusted {
+
+        void ocall_print_string([in, string] const char *str);
+        void ocall_retrieve_edbs([in, count=amt, size=ins_length] void* ins, [out, count=amt, size=ins_res_length] void* ins_res, size_t amt, size_t ins_length, size_t ins_res_length);
+        void ocall_retrieve_edb([in, size=ins_length] void* ins, [out, size=ins_res_length] void* ins_res, size_t ins_length, size_t ins_res_length);
+        void ocall_add_edbs([in, count=amt, size=outs_length] void* outs, [in, count=amt, size=outs_res_length] void* outs_res, size_t amt, size_t outs_length, size_t outs_res_length);
+        
+        void ocall_transfer_edbs([in, count= pair_count, size=rand_size] const void *t1_u_arr, 
+									            [in, count= pair_count, size=rand_size] const void *t1_v_arr,
+									            int pair_count, int rand_size); 
+        void ocall_retrieve_encrypted_doc([in, size=del_id_len] const char *del_id, size_t del_id_len, 
+                                          [out, size=maxLen] unsigned char *encrypted_content, size_t maxLen,
+                                          [out, count=int_len] int *length_content, size_t int_len);
+        
+        void ocall_del_encrypted_doc([in, size=del_id_len] const char *del_id, size_t del_id_len);
+        
+
+        void ocall_query_tokens_entries([in, count= pair_count, size=rand_size] const void *Q_w_u_arr,
+                               [in, count= pair_count, size=rand_size] const void *Q_w_id_arr,
+                               int pair_count, int rand_size);
+
+
+    };
+};
