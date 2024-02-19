@@ -6,81 +6,68 @@ HeX-basic is for the single keyword-file search and HeX-range is for range queri
 
 The datasets for HeX-basic include a synthetic dataset (SD) and a portion of Enron e-mail dataset. The 'count-1w.csv' to generate SD can be downloaded from https://norvig.com/ngrams/. The 'maildir' folder for Enron dataset can be downloaded from https://www.cs.cmu.edu/~enron/enron_mail_20150507.tar.gz and ungzipped.
 
+# Requirements
+
+1. Ubuntu Server 18.04 LTS 64-bit OS with SGX
+2. Install Intel SGX Driver, SDK and PSW for Linux* OS
+3. `sudo apt install libpcap-dev`
+4. Install intel-sgx-ssl
 
 # HeX-basic
 
-1. Install Intel SGX Driver, SDK and PSW for Linux* OS
-2. Build the project with the prepared Makefile:
+1. Build the project with the prepared Makefile:
 
    Using Hardware Mode and Debug build:
    
-       `` $ cd HeX-basic && make clean``
-       
-       `` $ make SGX_MODE=HW SGX_DEBUG=1``
+       $ cd HeX-basic && make clean
+       $ make SGX_MODE=HW SGX_DEBUG=1
 
-3. Execute the binary directly:
+2. Execute the binary directly:
   `
     $ ./cryptoTestingApp
   `
-
-4. This version is tested on Ubuntu Server 18.04 LTS 64-bit OS with SGX >=2.0
-
 
 # HeX-range
 
-1. Install Intel SGX Driver, SDK and PSW for Linux* OS
-2. Build the project with the prepared Makefile:
+1. Build the project with the prepared Makefile:
 
    Using Hardware Mode and Debug build:
    
-       `` $ cd HeX-range && make clean``
-       
-       `` $ make SGX_MODE=HW SGX_DEBUG=1``
+       $ cd HeX-range && make clean
+       $ make SGX_MODE=HW SGX_DEBUG=1
 
-3. Execute the binary directly:
+2. Execute the binary directly:
   `
     $ ./cryptoTestingApp
   `
-
-4. This version is tested on Ubuntu Server 18.04 LTS 64-bit OS with SGX >=2.0
-
 
 # Maiden
 
-1. Install Intel SGX Driver, SDK and PSW for Linux* OS
-2. Build the project with the prepared Makefile:
+1. Build the project with the prepared Makefile:
 
    Using Hardware Mode and Debug build:
    
-       `` $ cd Maiden && make clean``
-       
-       `` $ make SGX_MODE=HW SGX_DEBUG=1``
+       $ cd Maiden && make clean
+       $ make SGX_MODE=HW SGX_DEBUG=1
 
-3. Execute the binary directly:
+2. Execute the binary directly:
   `
     $ ./cryptoTestingApp
   `
-
-4. This version is tested on Ubuntu Server 18.04 LTS 64-bit OS with SGX >=2.0
-
 
 # SE_SGX_2
 
-1. Install Intel SGX Driver, SDK and PSW for Linux* OS
-2. Build the project with the prepared Makefile:
+1. Build the project with the prepared Makefile:
 
    Using Hardware Mode and Debug build:
    
-       `` $ cd SE_SGX_2 && make clean``
-       
-       `` $ make SGX_MODE=HW SGX_DEBUG=1``
+       $ cd SE_SGX_2 && make clean
+       $ make SGX_MODE=HW SGX_DEBUG=1
 
-3. Execute the binary directly:
+2. Execute the binary directly:
   `
     $ ./cryptoTestingApp
   `
-
-4. This version is tested on Ubuntu Server 18.04 LTS 64-bit OS with SGX >=2.0
 
 
 # Reference
