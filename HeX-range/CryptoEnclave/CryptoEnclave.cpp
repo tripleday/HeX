@@ -26,33 +26,31 @@ using std::string;
 
 // local variables inside Enclave
 unsigned char K[ENTRY_HASH_KEY_LEN_128] = {0};
-unsigned char KC[ENC_KEY_SIZE] = {0};
-unsigned char KF[ENC_KEY_SIZE] = {0};
+// unsigned char KC[ENC_KEY_SIZE] = {0};
+// unsigned char KF[ENC_KEY_SIZE] = {0};
 
 // total file amount
-const int id_max = 10000;
-const int bits = 8;
+const int id_max = total_file_no;
+// const int bits = 8;
 // constexpr size_t N = id_max;
+
 int in_amt = 1;
 int CK_max = 10;
 int out_srch_amt = 1;
 int out_upd_amt = 2;
-// int CK_max = 2*in_amt;
-// int out_srch_amt = in_amt;
-// int out_upd_amt = 2*in_amt;
 int dummy_value = 0;
 // key version state
 std::unordered_map<string, int> KVS;
 std::vector<string> words_KVS; 
 // cached keyword
-std::unordered_map<string,std::bitset<id_max>> CK;\
+std::unordered_map<string,std::bitset<id_max>> CK;
 
 /*** setup */
 void ecall_init(unsigned char *keyF, size_t len){ 
 
-    memcpy(KF,keyF,len);
+    // memcpy(KF,keyF,len);
     sgx_read_rand(K, ENTRY_HASH_KEY_LEN_128);
-    sgx_read_rand(KC, ENC_KEY_SIZE);
+    // sgx_read_rand(KC, ENC_KEY_SIZE);
 }
 
 /*** update with op */
@@ -315,7 +313,7 @@ void ecall_updateDoc(char *doc_id, size_t id_length, char *content, size_t conte
             string msg = words_out[i] + std::to_string(KVS[words_out[i]]+1) + std::to_string(0);
             unsigned char *label =  (unsigned char *) malloc(HASH_VALUE_LEN_128); 
             hash_SHA128(K, msg.c_str(), msg.length(), label);
-            memcpy(&outs[i].content,label,HASH_VALUE_LEN_128);
+            memcpy(outs[i].content,label,HASH_VALUE_LEN_128);
             outs[i].content_length = HASH_VALUE_LEN_128;
             free(label);
             string enc_key_msg = words_out[i] + std::to_string(KVS[words_out[i]]+1) + std::to_string(1);
@@ -326,19 +324,20 @@ void ecall_updateDoc(char *doc_id, size_t id_length, char *content, size_t conte
             uint8_t* bm_p = (uint8_t*) malloc(int(id_max/8));
             bitsetToUint8Array(CK[words_out[i]], bm_p);
             entryValue e;  
-            // e.message_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + bm_str.length(); 
-            e.message_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + int(id_max/8); 
-	        e.message = (char *) malloc(e.message_length);
-            enc_aes_gcm(enc_key, bm_p, int(id_max/8), e.message, e.message_length);
-            // enc_aes_gcm(enc_key, bm_str.c_str(), bm_str.length(), e.message, e.message_length);
-            memcpy(&outs_res[i].content, (unsigned char*)e.message, e.message_length);
-            outs_res[i].content_length = e.message_length;
+            // int cipher_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + bm_str.length(); 
+            int cipher_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + int(id_max/8); 
+	        unsigned char * cipher = (unsigned char *) malloc(cipher_length);
+            enc_aes_gcm(enc_key, bm_p, int(id_max/8), cipher, cipher_length);
+            // enc_aes_gcm(enc_key, bm_str.c_str(), bm_str.length(), cipher, cipher_length);
+            memcpy(outs_res[i].content, (unsigned char*)cipher, cipher_length);
+            outs_res[i].content_length = cipher_length;
             free(enc_key);
             free(bm_p);
-            free(e.message);
-            int vn = KVS[words_out[i]]+1;
-            KVS.erase(words_out[i]);
-            KVS.insert(std::pair<string,int>(words_out[i], vn)); 
+            free(cipher);
+            // int vn = KVS[words_out[i]]+1;
+            // KVS.erase(words_out[i]);
+            // KVS.insert(std::pair<string,int>(words_out[i], vn)); 
+            KVS[words_out[i]] = KVS[words_out[i]]+1;
             CK.erase(words_out[i]);
         }
         ocall_add_edbs(outs, outs_res, out_amt, sizeof(label_struct), sizeof(cipher_struct));
@@ -382,9 +381,13 @@ void ecall_search(const int *keyword, size_t keyword_len, const char *order_char
         std::unordered_map<string,int>::const_iterator kvs_got = KVS.find(word);
         if (kvs_got == KVS.end()) { // not exists
             // printf("Keyword does not exist for search");
-            continue;
+            if (dummy_value > 0) {
+                int d = std::mt19937{std::random_device{}()}() % dummy_value;
+                word = "dummy" + std::to_string(d);
+            }
+            else continue;
         }
-        else{ // exists
+        // else{ // exists
             string word_in;
             std::unordered_map<string,std::bitset<id_max>>::const_iterator ck_got = CK.find(word);
             if (ck_got == CK.end()) { // not cached
@@ -443,7 +446,7 @@ void ecall_search(const int *keyword, size_t keyword_len, const char *order_char
                 bm_result |= bm_in;
             }
             CK.insert(std::pair<string,std::bitset<id_max>>(word_in, bm_in));
-        }
+        // }
 
         int out_amt = CK.size()-CK_max;
         std::vector<string> words_without_w;               
@@ -458,7 +461,7 @@ void ecall_search(const int *keyword, size_t keyword_len, const char *order_char
             string msg = words_out[i] + std::to_string(KVS[words_out[i]]+1) + std::to_string(0);
             unsigned char *label =  (unsigned char *) malloc(HASH_VALUE_LEN_128); 
             hash_SHA128(K, msg.c_str(), msg.length(), label);
-            memcpy(&outs[i].content,label,HASH_VALUE_LEN_128);
+            memcpy(outs[i].content,label,HASH_VALUE_LEN_128);
             outs[i].content_length = HASH_VALUE_LEN_128;
             free(label);
             string enc_key_msg = words_out[i] + std::to_string(KVS[words_out[i]]+1) + std::to_string(1);
@@ -469,19 +472,20 @@ void ecall_search(const int *keyword, size_t keyword_len, const char *order_char
             uint8_t* bm_p = (uint8_t*) malloc(int(id_max/8));
             bitsetToUint8Array(CK[words_out[i]], bm_p);
             entryValue e;  
-            // e.message_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + bm_str.length(); 
-            e.message_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + int(id_max/8); 
-            e.message = (char *) malloc(e.message_length);
-            enc_aes_gcm(enc_key, bm_p, int(id_max/8), e.message, e.message_length);
-            // enc_aes_gcm(enc_key, bm_str.c_str(), bm_str.length(), e.message, e.message_length);
-            memcpy(&outs_res[i].content, (unsigned char*)e.message, e.message_length);
-            outs_res[i].content_length = e.message_length;
+            // int cipher_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + bm_str.length(); 
+            int cipher_length = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + int(id_max/8); 
+            unsigned char * cipher = (unsigned char *) malloc(cipher_length);
+            enc_aes_gcm(enc_key, bm_p, int(id_max/8), cipher, cipher_length);
+            // enc_aes_gcm(enc_key, bm_str.c_str(), bm_str.length(), cipher, cipher_length);
+            memcpy(outs_res[i].content, (unsigned char*)cipher, cipher_length);
+            outs_res[i].content_length = cipher_length;
             free(enc_key);
             free(bm_p);
-            free(e.message);
-            int vn = KVS[words_out[i]]+1;
-            KVS.erase(words_out[i]);
-            KVS.insert(std::pair<string,int>(words_out[i], vn)); 
+            free(cipher);
+            // int vn = KVS[words_out[i]]+1;
+            // KVS.erase(words_out[i]);
+            // KVS.insert(std::pair<string,int>(words_out[i], vn)); 
+            KVS[words_out[i]] = KVS[words_out[i]]+1;
             CK.erase(words_out[i]);
         }
         ocall_add_edbs(outs, outs_res, out_amt, sizeof(label_struct), sizeof(cipher_struct));
@@ -490,112 +494,12 @@ void ecall_search(const int *keyword, size_t keyword_len, const char *order_char
 
     }
     
+    // printf("num: %d", num);
+    // printf("order: %s", order);
     // printf("total id number: %d \n", bm_result.count());
     bm_result.count();
 }
 
 void ecall_printMem(){
-    printf("%d", (sizeof(string)+sizeof(int))*KVS.size()+(sizeof(string)+10000/8)*CK.size());
+    printf("%d", (sizeof(string)+sizeof(int))*KVS.size()+(sizeof(string)+total_file_no/8)*CK.size());
 }
-
-// // vector implementation
-// void ecall_addDoc(char *doc_id, size_t id_length,char *content,int content_length){             
-//     //parse content to keywords splited by comma
-//     std::vector<string> wordList;
-//     wordList = wordTokenize(content,content_length);
-//     size_t pair_no = wordList.size();
-
-//     rand_t labels[pair_no];
-//     rand_t ciphers[pair_no];
-
-//     int id_int = atoi(doc_id);
-//     // string id_str(doc_id,id_length);
-//     int index=0;
-
-//     for(std::vector<string>::iterator it = wordList.begin(); it != wordList.end(); ++it) {
-      
-//         string word = (*it);
-//         //printf("keyword %s", (char*)word.c_str());
-
-//         if (CK.size() == 0) { // just fill
-//             std::bitset<id_max> bm;
-//             bm[id_int-1]=1;
-//             CK.insert(std::pair<string,std::bitset<id_max>>(word, bm));
-//             KVS.insert(std::pair<string,int>(word, 0));
-//         }
-//         else if (CK.size() < CK_max) { // just fill based on CK
-//             std::unordered_map<string,std::bitset<id_max>>::const_iterator ck_got = CK.find(word);
-//             if (ck_got == CK.end()) {
-//                 std::unordered_map<string,int>::const_iterator kvs_got = KVS.find(word);
-//                 if (kvs_got == KVS.end()) {
-//                     std::bitset<id_max> bm;
-//                     bm[id_int-1]=1;
-//                     CK.insert(std::pair<string,std::bitset<id_max>>(word, bm));
-//                     KVS.insert(std::pair<string,int>(word, 0)); 
-//                 }
-//             }
-//             else{
-//                 std::bitset<id_max> bm = ck_got->second;
-//                 if (bm[id_int-1]==0) {
-//                     bm[id_int-1] = 1;
-//                 }
-//             }
-//         }
-//         else { // == CK_max
-//             std::vector<string> word_in;
-//             int word_in_amt = 0;
-//             std::unordered_map<string,std::bitset<id_max>>::const_iterator ck_got = CK.find(word);
-//             if (ck_got == CK.end()) { // not cached
-//                 word_in.push_back();
-//                 std::unordered_map<string,int>::const_iterator kvs_got = KVS.find(word);
-//                 if (kvs_got == KVS.end()) {
-//                 }
-//                 else{
-//                 }
-//             }
-//             else{ // cached
-//                 std::vector<string> words_KVS;               
-//                 for (auto it = CK.begin(); it != CK.end(); ++it) {
-//                     words_KVS.push_back(it->first);
-//                 }
-//                 std::vector<string> words_KVS;               
-//                 for (auto it = KVS.begin(); it != KVS.end(); ++it) {
-//                     words_KVS.push_back(it->first);
-//                 }
-//                 std::vector<string> words_without_CK;
-//                 std::set_difference(words_KVS.begin(), words_KVS.end(),
-//                         words_KVS.begin(), words_KVS.end(),
-//                         std::back_inserter(words_without_CK));
-//                 if (words_without_CK.size() < in_amt) { // take in KVS.szie-CK.size entries
-//                     word_in = words_without_CK;
-//                     word_in_amt = words_without_CK.size();
-//                 }
-//                 else{ // take in in_amt entries
-//                     std::sample(words_without_CK.begin(), words_without_CK.end(), std::back_inserter(word_in), in_amt, std::mt19937{std::random_device{}()});
-//                     word_in_amt = in_amt;
-//                 }
-//             }
-//             label_struct *ins = (label_struct*) malloc(word_in_amt * sizeof(label_struct)); // labels
-//             std::vector<string> enc_keys(word_in_amt); // encryption keys
-//             for (int i=0; i < word_in_amt; i++) {
-//                 string msg = word_in[i] + std::to_string(KVS[word_in[i]]) + std::to_string(0);
-//                 enc_keys[i] = word_in[i] + std::to_string(KVS[word_in[i]]) + std::to_string(1);
-//                 unsigned char *label =  (unsigned char *) malloc(HASH_VALUE_LEN_128); 
-//                 hash_SHA128(K, msg.c_str(), msg.length(), label);
-//                 memcpy(&ins[i].content,label,HASH_VALUE_LEN_128);
-//                 free(label);
-//             }
-//             cipher_struct *ins_res = (cipher_struct*) malloc(word_in_amt * sizeof(cipher_struct));   
-//             ocall_retrieve_edbs(ins, ins_res, word_in_amt, sizeof(label_struct), sizeof(cipher_struct));
-//             for (int i=0; i < word_in_amt; i++) {
-//                 unsigned char* temp_plain;
-//                 size_t temp_plain_len;
-//                 dec_aes_gcm(&enc_keys[i], ins_res[i].content, ins_res[i].content_length, temp_plain, temp_plain_len);
-//                 string bm_str((char*) temp_plain, temp_plain_len);
-//                 std::reverse(bm_str.begin(),bm_str.end()); // reverse to convert to bitset
-//                 std::bitset<id_max> bm(bm_str);
-//                 CK.insert(std::pair<string,std::bitset<id_max>>(word_in[i], bm));
-//             }
-//         }
-//     }
-// }

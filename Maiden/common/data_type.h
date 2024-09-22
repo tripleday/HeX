@@ -14,13 +14,19 @@
 
 /* for all sources except OCALL/ECALL */
 
+// const int total_file_no = 10000;
+const int total_file_no = 30000;
+const int del_no = (int)total_file_no*0.5;
+// const std::string raw_doc_dir=  "../data/enron/";
 const std::string raw_doc_dir=  "../data/small/";
+// const std::string s_keyword[10]={"pleas","thank","forward","pm","pl","cc","the","am","enron","know"};	
+const std::string s_keyword[10]={"the","of","and","to","a","in","for","is","on","that"};
+
 
 #define AESGCM_IV_SIZE 12
 static unsigned char gcm_iv[] = {
     0x99, 0xaa, 0x3e, 0x68, 0xed, 0x81, 0x73, 0xa0, 0xee, 0xd0, 0x66, 0x84
 };
-
 #define AESGCM_MAC_SIZE 16
 
 #define MAX_FILE_LENGTH 10 

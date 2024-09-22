@@ -54,7 +54,7 @@ void Server::add_edbs(label_struct * outs, cipher_struct * outs_res, size_t out_
 }
 
 void Server::print_mem(){
-    std::cout << (sizeof(std::string)+30000/8)*M_I.size() << std::endl;
+    std::cout << (sizeof(std::string)+total_file_no/8)*M_I.size() << std::endl;
 }
 
 

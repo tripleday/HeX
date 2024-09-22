@@ -28,9 +28,6 @@ uint64_t timeSinceEpochMicrosec() {
 
 #define ENCLAVE_FILE "CryptoEnclave.signed.so"
 
-int total_file_no = (int)30000;//50000;//100000
-int del_no = (int)total_file_no*0.25;//5000;//10000;
-
 /* 	Note 1: Enclave only recognises direct pointer with count*size, where count is the number of elements in the array, and size is the size of each element
 		other further pointers of pointers should have fixed max length of array to eliminate ambiguity to Enclave (by using pointer [max_buf]).
 	Note 2: In outcall, passing pointer [out] can only be modified/changed in the direct .cpp class declaring the ocall function.
@@ -54,6 +51,10 @@ int del_no = (int)total_file_no*0.25;//5000;//10000;
 	7-run with prerelease mode
 	8-re generate new list test, but without using the list inside
  */
+
+
+// int total_file_no = 30000;//50000;//100000
+// int del_no = (int)total_file_no*0.75;//5000;//10000;
 
 Client *myClient; //extern to separate ocall
 Server *myServer; //extern to separate ocall
@@ -216,8 +217,8 @@ int main()
     ecall_printMem(eid);
 
 
-	std::string s_keyword[10]={"the","of","and","to","a","in","for","is","on","that"};
-	// std::string s_keyword[10]={"pleas","thank","forward","pm","pl","cc","the","am","enron","know"};	
+	// std::string s_keyword[10]={"the","of","and","to","a","in","for","is","on","that"};
+	// // std::string s_keyword[10]={"pleas","thank","forward","pm","pl","cc","the","am","enron","know"};	
 
 	for (int s_i = 0; s_i < 10; s_i++){
 		printf("\nSearching ==> %s\n", s_keyword[s_i].c_str());

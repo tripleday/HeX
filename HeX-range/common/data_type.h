@@ -13,26 +13,26 @@
 #include <unordered_map>
 
 /* for all sources except OCALL/ECALL */
-
-const std::string raw_doc_dir=  "../data/8bits/";
-
+#define AESGCM_MAC_SIZE 16
 #define AESGCM_IV_SIZE 12
 static unsigned char gcm_iv[] = {
     0x99, 0xaa, 0x3e, 0x68, 0xed, 0x81, 0x73, 0xa0, 0xee, 0xd0, 0x66, 0x84
 };
 
-#define AESGCM_MAC_SIZE 16
+#define ENTRY_VALUE_LEN 128
 #define MAX_FILE_LENGTH 10 
-
 
 #define ENTRY_HASH_KEY_LEN_128 16 // for HMAC-SHA128- bit key
 #define HASH_VALUE_LEN_128 16 // for HMAC-SHA128- bit key
 #define ENC_KEY_SIZE 16 // for AES128
-#define ENTRY_VALUE_LEN 10030 // 10000-bit 1250-Byte
-#define BITSET_LEN 10030 // 10000-bit 1250-Byte
 const int ADD = 1;
 const int DEL = 0;
 
+
+const int total_file_no = 10000;
+const int bits = 32;
+const std::string raw_doc_dir=  "../data/32bits/";
+const int cipher_size = AESGCM_MAC_SIZE + AESGCM_IV_SIZE + int(total_file_no/8);
 
 
 #define BUFLEN 10240 //buffer for enc + dec
@@ -41,12 +41,12 @@ const int DEL = 0;
 typedef struct
 {
     size_t content_length;
-    unsigned char* content[HASH_VALUE_LEN_128];
+    unsigned char content[HASH_VALUE_LEN_128];
 } label_struct; //used to export between ecall and ocall
 typedef struct
 {
     size_t content_length;
-    unsigned char* content[ENTRY_VALUE_LEN];
+    unsigned char content[cipher_size];
 } cipher_struct; //used to export between ecall and ocall
 
 

@@ -34,8 +34,33 @@ uint64_t timeSinceEpochMicrosec() {
 
 #define ENCLAVE_FILE "CryptoEnclave.signed.so"
 
-int total_file_no = (int)30000;
-int del_no = (int)total_file_no*0.75;
+/* 	Note 1: Enclave only recognises direct pointer with count*size, where count is the number of elements in the array, and size is the size of each element
+		other further pointers of pointers should have fixed max length of array to eliminate ambiguity to Enclave (by using pointer [max_buf]).
+	Note 2: In outcall, passing pointer [out] can only be modified/changed in the direct .cpp class declaring the ocall function.
+	Note 3: If it is an int pointer pointing to a number-> using size=sizeof(int) to declare the size of the int pointer. That will be a larger range than using size_t in ocall
+	Note 4: ensure when using openssl and sgxcrypto, plaintext data should be more lengthy than 4-5 characters; (each content in raw_doc should have lengthy characters)
+			otherwise, random noise/padding will be auto added.
+	Note 5: convert to int or length needs to total_filecome with pre-define length;otherwise, following random bytes can occur.
+
+	memory leak note: 
+	1-declare all temp variable outside forloop
+	2-all func should return void, pass pointer to callee; caller should init mem and free pointer
+	3-use const as input parameter in funcs if any variable is not changed 
+	4-re-view both client/server in outside regarding above leak,
+		 (docContent fetch_data = myClient->ReadNextDoc();, 
+
+			//free memory 
+			free(fetch_data.content);
+			free(fetch_data.id.doc_id);)
+	5-struct should use constructor and destructor (later)
+	6-should use tool to check mem valgrind --leak-check=yes to test add function to see whether memory usage/leak before and after
+	7-run with prerelease mode
+	8-re generate new list test, but without using the list inside
+ */
+
+
+// int total_file_no = 10000;
+// int del_no = (int)total_file_no*0.25;
 
 
 Client *myClient; //extern to separate ocall
@@ -188,14 +213,14 @@ int main()
 		fetch_data = (docContent *)malloc(sizeof( docContent));
 		myClient->ReadNextDoc(fetch_data);
 
-		//encrypt and send to Server
-		entry *encrypted_entry;
-		encrypted_entry = (entry*)malloc(sizeof(entry));
+		// //encrypt and send to Server
+		// entry *encrypted_entry;
+		// encrypted_entry = (entry*)malloc(sizeof(entry));
 		
-		encrypted_entry->first.content_length = fetch_data->id.id_length;
-		encrypted_entry->first.content = (char*) malloc(fetch_data->id.id_length);
-		encrypted_entry->second.message_length = fetch_data->content_length + AESGCM_MAC_SIZE + AESGCM_IV_SIZE;		
-		encrypted_entry->second.message = (char *)malloc(encrypted_entry->second.message_length);
+		// encrypted_entry->first.content_length = fetch_data->id.id_length;
+		// encrypted_entry->first.content = (char*) malloc(fetch_data->id.id_length);
+		// encrypted_entry->second.message_length = fetch_data->content_length + AESGCM_MAC_SIZE + AESGCM_IV_SIZE;		
+		// encrypted_entry->second.message = (char *)malloc(encrypted_entry->second.message_length);
 
 
 		// myClient->EncryptDoc(fetch_data,encrypted_entry);
@@ -211,9 +236,9 @@ int main()
 		free(fetch_data->id.doc_id);
 		free(fetch_data);
 
-		free(encrypted_entry->first.content);
-		free(encrypted_entry->second.message);
-		free(encrypted_entry);
+		// free(encrypted_entry->first.content);
+		// free(encrypted_entry->second.message);
+		// free(encrypted_entry);
 	}
     uint64_t t_end = timeSinceEpochMillisec();
     std::cout << (t_end-t_start) << " ms" << std::endl;
@@ -243,7 +268,7 @@ int main()
     ecall_printMem(eid);
 
 	
-	std::string s_keyword[10]={"the","of","and","to","a","in","for","is","on","that"};
+	// // std::string s_keyword[10]={"the","of","and","to","a","in","for","is","on","that"};
 	// std::string s_keyword[10]={"pleas","thank","forward","pm","pl","cc","the","am","enron","know"};	
 
 	for (int s_i = 0; s_i < 10; s_i++){
